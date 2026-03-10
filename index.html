@@ -3,40 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <title>Dashboard TRS Industrie 4.0</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
-body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 20px; }
+body{
+font-family:Arial, sans-serif;
+background:#f4f6f9;
+margin:20px;
+}
 
-h1 { text-align: center; margin-bottom: 20px; }
+h1{
+text-align:center;
+margin-bottom:25px;
+}
 
-.kpi-container { display: flex; justify-content: space-around; margin-bottom: 30px; }
+.kpi-container{
+display:flex;
+flex-wrap:wrap;
+justify-content:space-around;
+margin-bottom:30px;
+gap:15px;
+}
 
-.kpi { padding: 20px; width: 18%; background-color: #e0e0e0; border-radius: 8px; text-align: center; font-size: 18px; }
+.kpi{
+padding:20px;
+width:200px;
+color:white;
+border-radius:10px;
+text-align:center;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
 
-.kpi-value { font-size: 28px; font-weight: bold; margin-top: 10px; }
+.kpi-value{
+font-size:32px;
+font-weight:bold;
+margin-top:10px;
+}
 
-.chart-container { width: 90%; margin: auto; margin-bottom: 50px; }
+.chart-container{
+width:90%;
+margin:auto;
+margin-bottom:50px;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
 
-.filter-container { text-align: center; margin-bottom: 20px; }
+.filter-container{
+text-align:center;
+margin-bottom:25px;
+}
 
-.filter-container select, .filter-container input { padding: 5px 10px; font-size: 14px; margin-left: 10px; }
+.filter-container select,
+.filter-container input{
+padding:6px 10px;
+font-size:14px;
+margin-left:10px;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
 </style>
 </head>
+
 <body>
- 
+
 <h1>DASHBOARD TRS Industrie 4.0</h1>
- 
+
 <div class="kpi-container">
-<div class="kpi" style="background-color:#4A90E2;">Disponibilité<div class="kpi-value" id="kpi-dispo">89%</div></div>
-<div class="kpi" style="background-color:#F5A623;">Performance<div class="kpi-value" id="kpi-perf">82%</div></div>
-<div class="kpi" style="background-color:#7ED321;">Qualité<div class="kpi-value" id="kpi-qual">96%</div></div>
-<div class="kpi" style="background-color:#D0021B;">TRS<div class="kpi-value" id="kpi-trs">70%</div></div>
+
+<div class="kpi" style="background:#4A90E2">
+Disponibilité
+<div class="kpi-value" id="kpi-dispo">0%</div>
 </div>
- 
+
+<div class="kpi" style="background:#F5A623">
+Performance
+<div class="kpi-value" id="kpi-perf">0%</div>
+</div>
+
+<div class="kpi" style="background:#7ED321">
+Qualité
+<div class="kpi-value" id="kpi-qual">0%</div>
+</div>
+
+<div class="kpi" style="background:#D0021B">
+TRS
+<div class="kpi-value" id="kpi-trs">0%</div>
+</div>
+
+</div>
+
 <div class="filter-container">
 
-    Filtrer par : 
+Filtrer par :
+
 <select id="periodFilter">
 <option value="all">Tous</option>
 <option value="day">Jour</option>
@@ -44,256 +108,314 @@ h1 { text-align: center; margin-bottom: 20px; }
 <option value="month">Mois</option>
 </select>
 
-    Recherche par date : <input type="date" id="dateSearch">
+Recherche par date :
+<input type="date" id="dateSearch">
+
 </div>
- 
-<div class="chart-container"><canvas id="trsDailyChart"></canvas></div>
-<div class="chart-container"><canvas id="trsWeeklyChart"></canvas></div>
-<div class="chart-container"><canvas id="trsComponentsChart"></canvas></div>
-<div class="chart-container"><canvas id="paretoStopsChart"></canvas></div>
- 
+
+
+<div class="chart-container">
+<canvas id="trsDailyChart"></canvas>
+</div>
+
+<div class="chart-container">
+<canvas id="trsWeeklyChart"></canvas>
+</div>
+
+<div class="chart-container">
+<canvas id="trsComponentsChart"></canvas>
+</div>
+
+<div class="chart-container">
+<canvas id="paretoStopsChart"></canvas>
+</div>
+
+
 <script>
 
-// Données simulées
+/* ------------------ DONNÉES SIMULÉES ------------------ */
 
 const data = [
 
-  {date:"2026-03-04", trs:0.69, dispo:0.88, perf:0.83, qual:0.95, total:400, bonne:380, mauvaise:20, arret:60},
-
-  {date:"2026-03-05", trs:0.53, dispo:0.92, perf:0.63, qual:0.93, total:300, bonne:280, mauvaise:20, arret:40},
-
-  {date:"2026-03-06", trs:0.81, dispo:0.97, perf:0.88, qual:0.95, total:420, bonne:400, mauvaise:20, arret:15},
-
-  {date:"2026-03-07", trs:0.73, dispo:0.94, perf:0.81, qual:0.96, total:390, bonne:375, mauvaise:15, arret:30},
-
-  {date:"2026-03-08", trs:0.74, dispo:0.91, perf:0.83, qual:0.98, total:400, bonne:390, mauvaise:10, arret:45},
-
-  // … ajoute toutes tes données ici
+{date:"2026-03-04", trs:0.69, dispo:0.88, perf:0.83, qual:0.95, total:400, bonne:380, mauvaise:20, arret:60},
+{date:"2026-03-05", trs:0.53, dispo:0.92, perf:0.63, qual:0.93, total:300, bonne:280, mauvaise:20, arret:40},
+{date:"2026-03-06", trs:0.81, dispo:0.97, perf:0.88, qual:0.95, total:420, bonne:400, mauvaise:20, arret:15},
+{date:"2026-03-07", trs:0.73, dispo:0.94, perf:0.81, qual:0.96, total:390, bonne:375, mauvaise:15, arret:30},
+{date:"2026-03-08", trs:0.74, dispo:0.91, perf:0.83, qual:0.98, total:400, bonne:390, mauvaise:10, arret:45}
 
 ];
- 
-// Pareto des arrêts simulé
+
+
+/* ------------------ PARETO ARRÊTS ------------------ */
 
 const stopCauses = [
 
-  {cause:"Maintenance", duree:120},
-
-  {cause:"Panne machine", duree:80},
-
-  {cause:"Changement format", duree:50},
-
-  {cause:"Manque matière", duree:30},
-
-  {cause:"Autres", duree:20}
+{cause:"Maintenance", duree:120},
+{cause:"Panne machine", duree:80},
+{cause:"Changement format", duree:50},
+{cause:"Manque matière", duree:30},
+{cause:"Autres", duree:20}
 
 ];
- 
-// Helper pour couleur TRS
 
-function getTRSColor(v){ if(v<0.6) return 'red'; if(v<0.75) return 'yellow'; return 'green'; }
- 
-// Fonctions graphiques
 
-function drawTRSDaily(filteredData){
+/* ------------------ COULEUR TRS ------------------ */
 
-    const ctx = document.getElementById('trsDailyChart').getContext('2d');
+function getTRSColor(v){
 
-    const chartData = {
-
-        labels: filteredData.map(d=>d.date),
-
-        datasets:[{
-
-            label:'TRS journalier',
-
-            data: filteredData.map(d=>d.trs),
-
-            borderColor:'blue',
-
-            backgroundColor: filteredData.map(d=>getTRSColor(d.trs)),
-
-            fill:false,
-
-            tension:0.2,
-
-            pointRadius:6
-
-        }]
-
-    };
-
-    if(window.trsDailyChartObj) window.trsDailyChartObj.destroy();
-
-    window.trsDailyChartObj = new Chart(ctx,{type:'line',data:chartData,options:{
-
-        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
-
-        plugins:{title:{display:true,text:'TRS journalier'},tooltip:{callbacks:{
-
-            label:function(ctx){
-
-                const d=filteredData[ctx.dataIndex];
-
-                return `TRS: ${(d.trs*100).toFixed(1)}%, Total: ${d.total}, Bonne: ${d.bonne}, Mauvaise: ${d.mauvaise}, Arrêt: ${d.arret}min`;
-
-            }
-
-        }},legend:{display:false}}
-
-    }});
+if(v < 0.6) return "red";
+if(v < 0.75) return "orange";
+return "green";
 
 }
- 
-function drawTRSWeekly(filteredData){
 
-    // Grouper par semaine
 
-    const weeks = {};
+/* ------------------ KPI DYNAMIQUES ------------------ */
 
-    filteredData.forEach(d=>{
+function updateKPI(filtered){
 
-        const week = new Date(d.date).toISOString().slice(0,10); // simplifié
+if(filtered.length === 0) return;
 
-        if(!weeks[week]) weeks[week]=[];
+const avgDispo = filtered.reduce((a,b)=>a+b.dispo,0)/filtered.length;
+const avgPerf = filtered.reduce((a,b)=>a+b.perf,0)/filtered.length;
+const avgQual = filtered.reduce((a,b)=>a+b.qual,0)/filtered.length;
+const avgTRS = filtered.reduce((a,b)=>a+b.trs,0)/filtered.length;
 
-        weeks[week].push(d.trs);
-
-    });
-
-    const labels = Object.keys(weeks);
-
-    const trs = labels.map(l=>weeks[l].reduce((a,b)=>a+b,0)/weeks[l].length);
-
-    const ctx = document.getElementById('trsWeeklyChart').getContext('2d');
-
-    if(window.trsWeeklyChartObj) window.trsWeeklyChartObj.destroy();
-
-    window.trsWeeklyChartObj = new Chart(ctx,{type:'bar',data:{
-
-        labels:labels,
-
-        datasets:[{
-
-            label:'TRS moyen',
-
-            data:trs,
-
-            backgroundColor:trs.map(getTRSColor)
-
-        },{
-
-            label:'Cible 85%',
-
-            data:Array(trs.length).fill(0.85),
-
-            type:'line',
-
-            borderColor:'black',
-
-            borderWidth:2,
-
-            fill:false,
-
-            pointRadius:0
-
-        }]
-
-    },options:{
-
-        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
-
-        plugins:{title:{display:true,text:'TRS moyen par semaine'}}
-
-    }});
+document.getElementById("kpi-dispo").innerText = (avgDispo*100).toFixed(1)+"%";
+document.getElementById("kpi-perf").innerText = (avgPerf*100).toFixed(1)+"%";
+document.getElementById("kpi-qual").innerText = (avgQual*100).toFixed(1)+"%";
+document.getElementById("kpi-trs").innerText = (avgTRS*100).toFixed(1)+"%";
 
 }
- 
-function drawComponents(filteredData){
 
-    const ctx = document.getElementById('trsComponentsChart').getContext('2d');
 
-    if(window.trsComponentsChartObj) window.trsComponentsChartObj.destroy();
+/* ------------------ TRS JOURNALIER ------------------ */
 
-    window.trsComponentsChartObj = new Chart(ctx,{type:'bar',data:{
+function drawTRSDaily(filtered){
 
-        labels:filteredData.map(d=>d.date),
+const ctx = document.getElementById("trsDailyChart");
 
-        datasets:[
+if(window.dailyChart) window.dailyChart.destroy();
 
-            {label:'Disponibilité', data:filteredData.map(d=>d.dispo), backgroundColor:'#4A90E2'},
+window.dailyChart = new Chart(ctx,{
 
-            {label:'Performance', data:filteredData.map(d=>d.perf), backgroundColor:'#F5A623'},
+type:"line",
 
-            {label:'Qualité', data:filteredData.map(d=>d.qual), backgroundColor:'#7ED321'}
+data:{
+labels:filtered.map(d=>d.date),
 
-        ]
+datasets:[{
 
-    },options:{
+label:"TRS",
 
-        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
+data:filtered.map(d=>d.trs),
 
-        plugins:{title:{display:true,text:'Composantes TRS'}}
+borderColor:"blue",
 
-    }});
+backgroundColor:filtered.map(d=>getTRSColor(d.trs)),
+
+tension:0.3,
+
+pointRadius:6
+
+}]
+},
+
+options:{
+scales:{
+y:{
+min:0,
+max:1,
+ticks:{callback:v=>v*100+"%"}
+}
+},
+
+plugins:{
+title:{display:true,text:"TRS Journalier"}
+}
 
 }
- 
+
+});
+
+}
+
+
+/* ------------------ TRS HEBDOMADAIRE ------------------ */
+
+function drawTRSWeekly(filtered){
+
+const labels = filtered.map(d=>d.date);
+const trs = filtered.map(d=>d.trs);
+
+const ctx = document.getElementById("trsWeeklyChart");
+
+if(window.weekChart) window.weekChart.destroy();
+
+window.weekChart = new Chart(ctx,{
+
+type:"bar",
+
+data:{
+labels:labels,
+
+datasets:[{
+
+label:"TRS",
+
+data:trs,
+
+backgroundColor:trs.map(getTRSColor)
+
+},
+
+{
+
+label:"Cible 85%",
+
+data:Array(trs.length).fill(0.85),
+
+type:"line",
+
+borderColor:"black",
+
+pointRadius:0
+
+}
+
+]
+},
+
+options:{
+scales:{
+y:{
+min:0,
+max:1,
+ticks:{callback:v=>v*100+"%"}
+}
+},
+
+plugins:{
+title:{display:true,text:"TRS vs Objectif"}
+}
+
+}
+
+});
+
+}
+
+
+/* ------------------ COMPOSANTES TRS ------------------ */
+
+function drawComponents(filtered){
+
+const ctx = document.getElementById("trsComponentsChart");
+
+if(window.compChart) window.compChart.destroy();
+
+window.compChart = new Chart(ctx,{
+
+type:"bar",
+
+data:{
+labels:filtered.map(d=>d.date),
+
+datasets:[
+
+{label:"Disponibilité",data:filtered.map(d=>d.dispo),backgroundColor:"#4A90E2"},
+{label:"Performance",data:filtered.map(d=>d.perf),backgroundColor:"#F5A623"},
+{label:"Qualité",data:filtered.map(d=>d.qual),backgroundColor:"#7ED321"}
+
+]
+
+},
+
+options:{
+scales:{
+y:{
+min:0,
+max:1,
+ticks:{callback:v=>v*100+"%"}
+}
+},
+
+plugins:{
+title:{display:true,text:"Composantes du TRS"}
+}
+
+}
+
+});
+
+}
+
+
+/* ------------------ PARETO ------------------ */
+
 function drawPareto(){
 
-    const sorted = stopCauses.sort((a,b)=>b.duree-a.duree);
+const sorted = stopCauses.sort((a,b)=>b.duree-a.duree);
 
-    const cumPercent = [];
+const ctx = document.getElementById("paretoStopsChart");
 
-    const total = sorted.reduce((a,b)=>a+b.duree,0);
+if(window.paretoChart) window.paretoChart.destroy();
 
-    let cum=0;
+window.paretoChart = new Chart(ctx,{
 
-    sorted.forEach(s=>{cum+=s.duree; cumPercent.push(cum/total);});
+type:"bar",
 
-    const ctx = document.getElementById('paretoStopsChart').getContext('2d');
+data:{
+labels:sorted.map(s=>s.cause),
 
-    if(window.paretoChartObj) window.paretoChartObj.destroy();
+datasets:[{
+label:"Durée (min)",
+data:sorted.map(s=>s.duree),
+backgroundColor:"#D0021B"
+}]
+},
 
-    window.paretoChartObj = new Chart(ctx,{
+options:{
+plugins:{
+title:{display:true,text:"Pareto des Arrêts"}
+}
+}
 
-        type:'bar',
-
-        data:{labels:sorted.map(s=>s.cause), datasets:[{label:'Durée (min)', data:sorted.map(s=>s.duree), backgroundColor:'#D0021B'}]},
-
-        options:{plugins:{title:{display:true,text:'Pareto des arrêts'}}}
-
-    });
+});
 
 }
- 
-// Filtrage
+
+
+/* ------------------ FILTRE ------------------ */
 
 function updateDashboard(){
 
-    const period = document.getElementById('periodFilter').value;
+const dateSearch = document.getElementById("dateSearch").value;
 
-    const dateSearch = document.getElementById('dateSearch').value;
+let filtered = [...data];
 
-    let filtered = [...data];
+if(dateSearch){
+filtered = filtered.filter(d=>d.date === dateSearch);
+}
 
-    if(dateSearch) filtered = filtered.filter(d=>d.date===dateSearch);
+updateKPI(filtered);
 
-    drawTRSDaily(filtered);
-
-    drawTRSWeekly(filtered);
-
-    drawComponents(filtered);
-
-    drawPareto();
+drawTRSDaily(filtered);
+drawTRSWeekly(filtered);
+drawComponents(filtered);
+drawPareto();
 
 }
- 
-document.getElementById('periodFilter').addEventListener('change',updateDashboard);
 
-document.getElementById('dateSearch').addEventListener('change',updateDashboard);
- 
-updateDashboard(); // initial
+
+document.getElementById("dateSearch").addEventListener("change",updateDashboard);
+
+
+/* ------------------ INITIALISATION ------------------ */
+
+updateDashboard();
+
 </script>
+
 </body>
 </html>
- 
