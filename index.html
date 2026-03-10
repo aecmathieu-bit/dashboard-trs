@@ -72,7 +72,9 @@ border:1px solid #ccc;
 <body>
 
 <h1>DASHBOARD TRS Industrie 4.0</h1>
-
+<div id="build-info" style="text-align:center; font-size:14px; color:gray; margin-bottom:20px;">
+Build : <span id="build-number"></span>
+</div>
 <div class="kpi-container">
 
 <div class="kpi" style="background:#4A90E2">
@@ -132,7 +134,23 @@ Recherche par date :
 
 
 <script>
+function generateBuildNumber(){
 
+const now = new Date();
+
+const year = now.getFullYear();
+const month = String(now.getMonth()+1).padStart(2,'0');
+const day = String(now.getDate()).padStart(2,'0');
+
+const hour = String(now.getHours()).padStart(2,'0');
+const minute = String(now.getMinutes()).padStart(2,'0');
+
+const build = `${year}.${month}.${day}-${hour}${minute}`;
+
+document.getElementById("build-number").innerText = build;
+
+}
+  generateBuildNumber();
 /* ------------------ DONNÉES SIMULÉES ------------------ */
 
 const data = [
