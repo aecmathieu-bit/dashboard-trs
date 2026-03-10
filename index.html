@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard TRS Industrie 4.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+
+body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 20px; }
+
+h1 { text-align: center; margin-bottom: 20px; }
+
+.kpi-container { display: flex; justify-content: space-around; margin-bottom: 30px; }
+
+.kpi { padding: 20px; width: 18%; background-color: #e0e0e0; border-radius: 8px; text-align: center; font-size: 18px; }
+
+.kpi-value { font-size: 28px; font-weight: bold; margin-top: 10px; }
+
+.chart-container { width: 90%; margin: auto; margin-bottom: 50px; }
+
+.filter-container { text-align: center; margin-bottom: 20px; }
+
+.filter-container select, .filter-container input { padding: 5px 10px; font-size: 14px; margin-left: 10px; }
+</style>
+</head>
+<body>
+ 
+<h1>DASHBOARD TRS Industrie 4.0</h1>
+ 
+<div class="kpi-container">
+<div class="kpi" style="background-color:#4A90E2;">Disponibilité<div class="kpi-value" id="kpi-dispo">89%</div></div>
+<div class="kpi" style="background-color:#F5A623;">Performance<div class="kpi-value" id="kpi-perf">82%</div></div>
+<div class="kpi" style="background-color:#7ED321;">Qualité<div class="kpi-value" id="kpi-qual">96%</div></div>
+<div class="kpi" style="background-color:#D0021B;">TRS<div class="kpi-value" id="kpi-trs">70%</div></div>
+</div>
+ 
+<div class="filter-container">
+
+    Filtrer par : 
+<select id="periodFilter">
+<option value="all">Tous</option>
+<option value="day">Jour</option>
+<option value="week">Semaine</option>
+<option value="month">Mois</option>
+</select>
+
+    Recherche par date : <input type="date" id="dateSearch">
+</div>
+ 
+<div class="chart-container"><canvas id="trsDailyChart"></canvas></div>
+<div class="chart-container"><canvas id="trsWeeklyChart"></canvas></div>
+<div class="chart-container"><canvas id="trsComponentsChart"></canvas></div>
+<div class="chart-container"><canvas id="paretoStopsChart"></canvas></div>
+ 
+<script>
+
+// Données simulées
+
+const data = [
+
+  {date:"2026-03-04", trs:0.69, dispo:0.88, perf:0.83, qual:0.95, total:400, bonne:380, mauvaise:20, arret:60},
+
+  {date:"2026-03-05", trs:0.53, dispo:0.92, perf:0.63, qual:0.93, total:300, bonne:280, mauvaise:20, arret:40},
+
+  {date:"2026-03-06", trs:0.81, dispo:0.97, perf:0.88, qual:0.95, total:420, bonne:400, mauvaise:20, arret:15},
+
+  {date:"2026-03-07", trs:0.73, dispo:0.94, perf:0.81, qual:0.96, total:390, bonne:375, mauvaise:15, arret:30},
+
+  {date:"2026-03-08", trs:0.74, dispo:0.91, perf:0.83, qual:0.98, total:400, bonne:390, mauvaise:10, arret:45},
+
+  // … ajoute toutes tes données ici
+
+];
+ 
+// Pareto des arrêts simulé
+
+const stopCauses = [
+
+  {cause:"Maintenance", duree:120},
+
+  {cause:"Panne machine", duree:80},
+
+  {cause:"Changement format", duree:50},
+
+  {cause:"Manque matière", duree:30},
+
+  {cause:"Autres", duree:20}
+
+];
+ 
+// Helper pour couleur TRS
+
+function getTRSColor(v){ if(v<0.6) return 'red'; if(v<0.75) return 'yellow'; return 'green'; }
+ 
+// Fonctions graphiques
+
+function drawTRSDaily(filteredData){
+
+    const ctx = document.getElementById('trsDailyChart').getContext('2d');
+
+    const chartData = {
+
+        labels: filteredData.map(d=>d.date),
+
+        datasets:[{
+
+            label:'TRS journalier',
+
+            data: filteredData.map(d=>d.trs),
+
+            borderColor:'blue',
+
+            backgroundColor: filteredData.map(d=>getTRSColor(d.trs)),
+
+            fill:false,
+
+            tension:0.2,
+
+            pointRadius:6
+
+        }]
+
+    };
+
+    if(window.trsDailyChartObj) window.trsDailyChartObj.destroy();
+
+    window.trsDailyChartObj = new Chart(ctx,{type:'line',data:chartData,options:{
+
+        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
+
+        plugins:{title:{display:true,text:'TRS journalier'},tooltip:{callbacks:{
+
+            label:function(ctx){
+
+                const d=filteredData[ctx.dataIndex];
+
+                return `TRS: ${(d.trs*100).toFixed(1)}%, Total: ${d.total}, Bonne: ${d.bonne}, Mauvaise: ${d.mauvaise}, Arrêt: ${d.arret}min`;
+
+            }
+
+        }},legend:{display:false}}
+
+    }});
+
+}
+ 
+function drawTRSWeekly(filteredData){
+
+    // Grouper par semaine
+
+    const weeks = {};
+
+    filteredData.forEach(d=>{
+
+        const week = new Date(d.date).toISOString().slice(0,10); // simplifié
+
+        if(!weeks[week]) weeks[week]=[];
+
+        weeks[week].push(d.trs);
+
+    });
+
+    const labels = Object.keys(weeks);
+
+    const trs = labels.map(l=>weeks[l].reduce((a,b)=>a+b,0)/weeks[l].length);
+
+    const ctx = document.getElementById('trsWeeklyChart').getContext('2d');
+
+    if(window.trsWeeklyChartObj) window.trsWeeklyChartObj.destroy();
+
+    window.trsWeeklyChartObj = new Chart(ctx,{type:'bar',data:{
+
+        labels:labels,
+
+        datasets:[{
+
+            label:'TRS moyen',
+
+            data:trs,
+
+            backgroundColor:trs.map(getTRSColor)
+
+        },{
+
+            label:'Cible 85%',
+
+            data:Array(trs.length).fill(0.85),
+
+            type:'line',
+
+            borderColor:'black',
+
+            borderWidth:2,
+
+            fill:false,
+
+            pointRadius:0
+
+        }]
+
+    },options:{
+
+        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
+
+        plugins:{title:{display:true,text:'TRS moyen par semaine'}}
+
+    }});
+
+}
+ 
+function drawComponents(filteredData){
+
+    const ctx = document.getElementById('trsComponentsChart').getContext('2d');
+
+    if(window.trsComponentsChartObj) window.trsComponentsChartObj.destroy();
+
+    window.trsComponentsChartObj = new Chart(ctx,{type:'bar',data:{
+
+        labels:filteredData.map(d=>d.date),
+
+        datasets:[
+
+            {label:'Disponibilité', data:filteredData.map(d=>d.dispo), backgroundColor:'#4A90E2'},
+
+            {label:'Performance', data:filteredData.map(d=>d.perf), backgroundColor:'#F5A623'},
+
+            {label:'Qualité', data:filteredData.map(d=>d.qual), backgroundColor:'#7ED321'}
+
+        ]
+
+    },options:{
+
+        scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}}},
+
+        plugins:{title:{display:true,text:'Composantes TRS'}}
+
+    }});
+
+}
+ 
+function drawPareto(){
+
+    const sorted = stopCauses.sort((a,b)=>b.duree-a.duree);
+
+    const cumPercent = [];
+
+    const total = sorted.reduce((a,b)=>a+b.duree,0);
+
+    let cum=0;
+
+    sorted.forEach(s=>{cum+=s.duree; cumPercent.push(cum/total);});
+
+    const ctx = document.getElementById('paretoStopsChart').getContext('2d');
+
+    if(window.paretoChartObj) window.paretoChartObj.destroy();
+
+    window.paretoChartObj = new Chart(ctx,{
+
+        type:'bar',
+
+        data:{labels:sorted.map(s=>s.cause), datasets:[{label:'Durée (min)', data:sorted.map(s=>s.duree), backgroundColor:'#D0021B'}]},
+
+        options:{plugins:{title:{display:true,text:'Pareto des arrêts'}}}
+
+    });
+
+}
+ 
+// Filtrage
+
+function updateDashboard(){
+
+    const period = document.getElementById('periodFilter').value;
+
+    const dateSearch = document.getElementById('dateSearch').value;
+
+    let filtered = [...data];
+
+    if(dateSearch) filtered = filtered.filter(d=>d.date===dateSearch);
+
+    drawTRSDaily(filtered);
+
+    drawTRSWeekly(filtered);
+
+    drawComponents(filtered);
+
+    drawPareto();
+
+}
+ 
+document.getElementById('periodFilter').addEventListener('change',updateDashboard);
+
+document.getElementById('dateSearch').addEventListener('change',updateDashboard);
+ 
+updateDashboard(); // initial
+</script>
+</body>
+</html>
+ 
